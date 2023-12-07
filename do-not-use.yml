@@ -1,0 +1,70 @@
+---
+- name: Collect INFO pre migration
+  hosts: web_servers
+  become: yes
+  connection: remote
+  gather_facts: yes
+
+  tasks:
+    - name: Create directory
+      shell: "mkdir -p /etc/test01/{{ inventory_hostname }}"
+
+    - name: System Processor
+      become: yes
+      shell: "awk -v word='processor' '$0 ~ word && $NF~/^[0-9]*$/ {print $NF}' /proc/cpuinfo > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_number-cpu"
+
+    - name: Processor Model
+      become: yes
+      shell: "awk -v word='model' '$0 ~ word && $NF~/^[0-9]*$/ {print $NF}' /proc/cpuinfo > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_proc-model"
+
+    - name: Package List
+      become: yes
+      shell: "rpm -qa > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_package-list"
+
+    - name: List of unit module
+      become: yes
+      shell: "systemctl list-unit-files > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_list-unit-files"
+
+    - name: Check java application
+      become: yes
+      shell: "ps -ef |grep -i java |awk '{print $1}'> /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_java-application"
+
+    - name: Check application port
+      become: yes
+      shell: "lsof |grep -i java |awk '{print $11}' |grep -i localhost: > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_appl-port"
+
+    - name: Check sysctl ipv4 conf
+      become: yes
+      shell: "sysctl -a |grep -i ipv4 |awk '{print $1}' > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_ipv4-conf"
+
+    - name: Check iptables config
+      become: yes
+      shell: "iptables -L -v > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_iptables"
+
+    - name: Check Static Route
+      become: yes
+      shell: "route -v -n -e -C -F > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_static-route"
+
+    - name: Check Crontab for all users
+      become: yes
+      shell: "cat /etc/passwd | sed 's|^([^:]*):.*$| crontab -u \\1 -l 2>/1|' | sh > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_crontab"
+
+    - name: Check MountPoint and if exist nfs or other remote share mounted
+      become: yes
+      shell: "mount | grep -F `stat -c %m /boot/grub` | cut -d' ' -f5 > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_mountpoint"
+
+    - name: Check Systems Dependencies and packages
+      become: yes
+      shell: "dpkg-query -l | head > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_package-dep"
+
+    - name: Check sudo rules for all users and group
+      become: yes
+      shell: "getent group sudo > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_sudo-list"
+
+    - name: Check Netork Conf
+      become: yes
+      shell: "ifconfig -a > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_netconf"
+
+    - name: Check all jks and certificate present
+      become: yes
+      shell: "find / -maxdepth 1 -type d \\( -name 'gvfs' -o -name 'doc' \\) -prune -o \\( -name '*.crt' -o -name '*.pem' -o -name '*.cer' -o -name '*.jks' \\) -exec echo {} \\; > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_cert-jks-all"
