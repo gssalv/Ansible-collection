@@ -1,0 +1,40 @@
+# Configurazione delle interfacce di rete
+Configurazione delle interfacce di rete:
+{% if 'ansible_interfaces' in hostvars[inventory_hostname] %}
+{% for interface in hostvars[inventory_hostname]['ansible_interfaces'] %}
+  - Interfaccia: {{ interface }}
+{% endfor %}
+{% else %}
+Nessuna informazione sulle interfacce di rete disponibile.
+{% endif %}
+
+# Configurazione degli indirizzi IPv4 di default
+Configurazione degli indirizzi IPv4 di default:
+{% if 'ansible_default_ipv4' in hostvars[inventory_hostname] and hostvars[inventory_hostname]['ansible_default_ipv4'] is mapping %}
+  - Indirizzo IP: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+  - Maschera di rete: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['netmask'] }}
+  - Gateway predefinito: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['gateway'] }}
+{% else %}
+Nessuna informazione sugli indirizzi IPv4 di default disponibile.
+{% endif %}
+
+# Moduli di systemd
+Moduli di systemd:
+{% if system_info['ansible_systemd'] is defined %}
+{% for service in system_info['ansible_systemd'] | default([]) %}
+  - {{ service }}
+{% endfor %}
+{% else %}
+Nessun modulo di systemd configurato.
+{% endif %}
+
+# Moduli systemctl installati
+Moduli systemctl installati:
+{% if 'ansible_systemctl' in system_info and system_info['ansible_systemctl'] | length > 0 %}
+{% for module, status in system_info['ansible_systemctl'] | dictsort %}
+  - Nome modulo: {{ module }}
+    Stato: {{ status }}
+{% endfor %}
+{% else %}
+Nessun modulo systemctl installato.
+{% endif %}
