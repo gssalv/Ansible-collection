@@ -1,0 +1,25 @@
+---
+- name: Configurazione del Sistema Operativo
+  hosts: web_servers
+  gather_facts: true  # Raccoglie tutte le informazioni sul sistema operativo
+
+  tasks:
+    - name: Crea la cartella di destinazione se non esiste
+      file:
+        path: "/etc/test01/{{ inventory_hostname }}"
+        state: directory
+
+    - name: Ottieni informazioni di sistema
+      setup:
+      register: system_info
+
+    - name: Genera file di configurazione
+      template:
+        src: system_config.j2
+        dest: "/etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_generalconfiguration"
+      vars:
+        system_info: "{{ ansible_facts }}"
+
+    - name: Mostra informazioni di sistema
+      debug:
+        var: system_info
