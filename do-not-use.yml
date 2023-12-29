@@ -47,7 +47,7 @@
 
     - name: Check Crontab for all users
       become: yes
-      shell: "cat /etc/passwd | sed 's|^([^:]*):.*$| crontab -u \\1 -l 2>/1|' | sh > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_crontab"
+      shell: "./list_crontab.sh > /etc/test01/{{ inventory_hostname }}/{{ inventory_hostname }}_crontab"
 
     - name: Check MountPoint and if exist nfs or other remote share mounted
       become: yes
