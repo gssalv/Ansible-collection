@@ -9,7 +9,6 @@
         path: "/etc/collect/report"
         state: directory
 
-  tasks:
     - name: Gather system information
       ansible.builtin.setup:
         filter: ansible_facts
@@ -36,10 +35,23 @@
         cmd: iptables -L
       register: firewall_output
 
-    - name: Save firewall configuration to a file
-      ansible.builtin.copy:
-        content: "{{ firewall_output.stdout_lines }}"
-        dest: "/etc/collect/report/firewall_config.txt"
+    - name: Get crontab entries for all users
+      ansible.builtin.shell:
+        cmd: "for user in $(getent passwd | cut -d: -f1); do crontab -l -u $user || true; done"
+      register: crontab_result
+
+    - name: Save crontab entries to a fact variable
+      ansible.builtin.set_fact:
+        crontab_config: "{{ crontab_result.stdout_lines | default([]) | join('\n') }}"
+
+    - name: Get sudo rules for all users
+      ansible.builtin.shell:
+        cmd: "for user in $(getent passwd | cut -d: -f1); do sudo -U $user -l || true; done"
+      register: sudo_rules_result
+
+    - name: Save sudo rules to a fact variable
+      ansible.builtin.set_fact:
+        sudo_rules: "{{ sudo_rules_result.stdout_lines | join('\n') }}"
 
     - name: Generate CSV report
       ansible.builtin.template:
@@ -48,4 +60,6 @@
       ignore_errors: true
       vars:
         ip_address: "{{ ansible_facts['ansible_default_ipv4']['address'] | default('N/A', true) }}"
-      ignore_errors: true
+        firewall_config: "{{ firewall_output.stdout_lines | join('\n') | default('N/A', true) }}"
+        crontab_entries: "{{ crontab_config | default('N/A', true) }}"
+        sudo_rules: "{{ sudo_rules | default('N/A', true) }}"
