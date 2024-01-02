@@ -1,29 +1,44 @@
-Server,IP Address,Operating System,CPU,RAM,Disk Space
+"Server","IP Address","Operating System","CPU","RAM (MB)","Disk Space (MB)","Firewall Configuration","Crontab","Sudo Rules"
 {% for host in ansible_play_hosts %}
-{{ host }},
+"{{ host }}",
 {% if hostvars[host]['ansible_default_ipv4'] is defined %}
-  {{ hostvars[host]['ansible_default_ipv4']['address'] | default('N/A') }},
+  "{{ hostvars[host]['ansible_default_ipv4']['address'] | default('N/A') }}",
 {% else %}
-  N/A,
+  "N/A",
 {% endif %}
 {% if hostvars[host]['ansible_distribution'] is defined %}
-  {{ hostvars[host]['ansible_distribution'] | default('N/A') }},
+  "{{ hostvars[host]['ansible_distribution'] | default('N/A') }}",
 {% else %}
-  N/A,
+  "N/A",
 {% endif %}
 {% if hostvars[host]['ansible_processor'] is defined %}
-  {{ hostvars[host]['ansible_processor'] | default('N/A') }},
+  "{{ hostvars[host]['ansible_processor'] | default('N/A') }}",
 {% else %}
-  N/A,
+  "N/A",
 {% endif %}
 {% if hostvars[host]['ansible_memtotal_mb'] is defined %}
-  {{ hostvars[host]['ansible_memtotal_mb'] | default('N/A') }},
+  "{{ hostvars[host]['ansible_memtotal_mb'] | default('N/A') }}",
 {% else %}
-  N/A,
+  "N/A",
 {% endif %}
 {% if hostvars[host]['ansible_mounts'][0]['size_available'] is defined %}
-  {{ hostvars[host]['ansible_mounts'][0]['size_available'] | default('N/A') }}
+  "{{ (hostvars[host]['ansible_mounts'][0]['size_available'] | default(0) / 1024 / 1024) | round(2) }}",
 {% else %}
-  N/A
+  "N/A",
+{% endif %}
+{% if firewall_output.stdout_lines is defined %}
+  "{{ firewall_output.stdout_lines | join('\n') | default('N/A') }}",
+{% else %}
+  "N/A",
+{% endif %}
+{% if crontab_entries is defined %}
+  "{{ crontab_entries | default('N/A') }}",
+{% else %}
+  "N/A",
+{% endif %}
+{% if sudo_rules is defined %}
+  "{{ sudo_rules | default('N/A') }}"
+{% else %}
+  "N/A"
 {% endif %}
 {% endfor %}
