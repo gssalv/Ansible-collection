@@ -1,0 +1,51 @@
+---
+- name: Generate Configuration Report
+  hosts: web_servers
+  gather_facts: yes
+
+  tasks:
+    - name: Create destination directory if not exists
+      ansible.builtin.file:
+        path: "/etc/collect/report"
+        state: directory
+
+  tasks:
+    - name: Gather system information
+      ansible.builtin.setup:
+        filter: ansible_facts
+
+    - name: Include facts about network interfaces
+      ansible.builtin.setup:
+        filter: network
+
+    - name: Gather IP address (fallback to 'N/A' if 'ansible_default_ipv4' not available)
+      set_fact:
+        ip_address: "{{ query('first', ansible_facts['ansible_default_ipv4']['address']) | default('N/A') }}"
+      ignore_errors: true
+
+    - name: Gather memory information
+      ansible.builtin.debug:
+        var: ansible_facts['ansible_memory_mb']
+
+    - name: Gather disk information
+      ansible.builtin.debug:
+        var: ansible_facts['ansible_mounts']
+
+    - name: Gather firewall configuration
+      ansible.builtin.shell:
+        cmd: iptables -L
+      register: firewall_output
+
+    - name: Save firewall configuration to a file
+      ansible.builtin.copy:
+        content: "{{ firewall_output.stdout_lines }}"
+        dest: "/etc/collect/report/firewall_config.txt"
+
+    - name: Generate CSV report
+      ansible.builtin.template:
+        src: report.j2
+        dest: "/etc/collect/report/server_report.csv"
+      ignore_errors: true
+      vars:
+        ip_address: "{{ ansible_facts['ansible_default_ipv4']['address'] | default('N/A', true) }}"
+      ignore_errors: true
